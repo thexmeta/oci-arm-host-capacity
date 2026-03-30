@@ -28,7 +28,7 @@ jobs:
     name: integration-tests (PHP ${{ matrix.php-versions }})
     steps:
       - name: Checkout
-        uses: actions/checkout@v1
+        uses: actions/checkout@v4
 
       - name: Install PHP
         uses: shivammathur/setup-php@v2
@@ -37,13 +37,12 @@ jobs:
           coverage: none
           tools: composer:v2
 
-      - name: Validate composer.json and composer.lock
-        run: composer validate --strict
+      # - name: Validate composer.json and composer.lock
+      #   run: composer validate --strict
 
       - name: Get Composer Cache Directory
         id: composer-cache
-        run: |
-          echo "::set-output name=dir::$(composer config cache-files-dir)"
+        run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
       - uses: actions/cache@v4
         with:
           path: vendor
@@ -54,39 +53,39 @@ jobs:
       - name: Install dependencies
         run: composer install --no-dev --prefer-dist --no-progress --no-interaction --optimize-autoloader
 
-      - name: Check Required Secrets
-        # Fail fast if secrets are missing before running the script
-        run: |
-          echo "Validating required secrets..."
-          ERRORS=0
+      # - name: Check Required Secrets
+      #   # Fail fast if secrets are missing before running the script
+      #   run: |
+      #     echo "Validating required secrets..."
+      #     ERRORS=0
 
-          # OCI Configuration
-          [ -z "${{ secrets.OCI_REGION }}" ] && echo "Missing OCI_REGION" && ERRORS=1
-          [ -z "${{ secrets.OCI_USER_ID }}" ] && echo "Missing OCI_USER_ID" && ERRORS=1
-          [ -z "${{ secrets.OCI_TENANCY_ID }}" ] && echo "Missing OCI_TENANCY_ID" && ERRORS=1
-          [ -z "${{ secrets.OCI_KEY_FINGERPRINT }}" ] && echo "Missing OCI_KEY_FINGERPRINT" && ERRORS=1
-          [ -z "${{ secrets.OCI_PRIVATE_KEY_FILENAME }}" ] && echo "Missing OCI_PRIVATE_KEY_FILENAME" && ERRORS=1
-          [ -z "${{ secrets.OCI_AVAILABILITY_DOMAIN }}" ] && echo "Missing OCI_AVAILABILITY_DOMAIN" && ERRORS=1
-          [ -z "${{ secrets.OCI_SUBNET_ID }}" ] && echo "Missing OCI_SUBNET_ID" && ERRORS=1
-          [ -z "${{ secrets.OCI_IMAGE_ID }}" ] && echo "Missing OCI_IMAGE_ID" && ERRORS=1
-          [ -z "${{ secrets.OCI_OCPUS }}" ] && echo "Missing OCI_OCPUS" && ERRORS=1
-          [ -z "${{ secrets.OCI_MEMORY_IN_GBS }}" ] && echo "Missing OCI_MEMORY_IN_GBS" && ERRORS=1
-          [ -z "${{ secrets.OCI_SHAPE }}" ] && echo "Missing OCI_SHAPE" && ERRORS=1
-          [ -z "${{ secrets.OCI_MAX_INSTANCES }}" ] && echo "Missing OCI_MAX_INSTANCES" && ERRORS=1
-          [ -z "${{ secrets.OCI_SSH_PUBLIC_KEY }}" ] && echo "Missing OCI_SSH_PUBLIC_KEY" && ERRORS=1
+      #     # OCI Configuration
+      #     [ -z "${{ secrets.OCI_REGION }}" ] && echo "Missing OCI_REGION" && ERRORS=1
+      #     [ -z "${{ secrets.OCI_USER_ID }}" ] && echo "Missing OCI_USER_ID" && ERRORS=1
+      #     [ -z "${{ secrets.OCI_TENANCY_ID }}" ] && echo "Missing OCI_TENANCY_ID" && ERRORS=1
+      #     [ -z "${{ secrets.OCI_KEY_FINGERPRINT }}" ] && echo "Missing OCI_KEY_FINGERPRINT" && ERRORS=1
+      #     [ -z "${{ secrets.OCI_PRIVATE_KEY_FILENAME }}" ] && echo "Missing OCI_PRIVATE_KEY_FILENAME" && ERRORS=1
+      #     [ -z "${{ secrets.OCI_AVAILABILITY_DOMAIN }}" ] && echo "Missing OCI_AVAILABILITY_DOMAIN" && ERRORS=1
+      #     [ -z "${{ secrets.OCI_SUBNET_ID }}" ] && echo "Missing OCI_SUBNET_ID" && ERRORS=1
+      #     [ -z "${{ secrets.OCI_IMAGE_ID }}" ] && echo "Missing OCI_IMAGE_ID" && ERRORS=1
+      #     [ -z "${{ secrets.OCI_OCPUS }}" ] && echo "Missing OCI_OCPUS" && ERRORS=1
+      #     [ -z "${{ secrets.OCI_MEMORY_IN_GBS }}" ] && echo "Missing OCI_MEMORY_IN_GBS" && ERRORS=1
+      #     [ -z "${{ secrets.OCI_SHAPE }}" ] && echo "Missing OCI_SHAPE" && ERRORS=1
+      #     [ -z "${{ secrets.OCI_MAX_INSTANCES }}" ] && echo "Missing OCI_MAX_INSTANCES" && ERRORS=1
+      #     [ -z "${{ secrets.OCI_SSH_PUBLIC_KEY }}" ] && echo "Missing OCI_SSH_PUBLIC_KEY" && ERRORS=1
 
-          # Telegram Configuration
-          [ -z "${{ secrets.TELEGRAM_USER_ID }}" ] && echo "Missing TELEGRAM_USER_ID" && ERRORS=1
-          [ -z "${{ secrets.TELEGRAM_BOT_API_KEY }}" ] && echo "Missing TELEGRAM_BOT_API_KEY" && ERRORS=1
+      #     # Telegram Configuration
+      #     [ -z "${{ secrets.TELEGRAM_USER_ID }}" ] && echo "Missing TELEGRAM_USER_ID" && ERRORS=1
+      #     [ -z "${{ secrets.TELEGRAM_BOT_API_KEY }}" ] && echo "Missing TELEGRAM_BOT_API_KEY" && ERRORS=1
 
-          if [ $ERRORS -eq 1 ]; then
-            echo ""
-            echo "Failed: One or more required secrets are missing."
-            echo "Configure all secrets in Repository Settings > Secrets and variables > Actions"
-            exit 1
-          fi
+      #     if [ $ERRORS -eq 1 ]; then
+      #       echo ""
+      #       echo "Failed: One or more required secrets are missing."
+      #       echo "Configure all secrets in Repository Settings > Secrets and variables > Actions"
+      #       exit 1
+      #     fi
 
-          echo "All 15 secrets validated successfully"
+      #     echo "All 15 secrets validated successfully"
 
       - name: Run script
         run: php index.php

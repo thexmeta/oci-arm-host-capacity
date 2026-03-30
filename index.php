@@ -71,13 +71,13 @@ if (getenv('OCI_MAX_INSTANCES') !== false) {
     $maxRunningInstancesOfThatShape = (int) getenv('OCI_MAX_INSTANCES');
 }
 
-$instances = $api->getInstances($config);
+// $instances = $api->getInstances($config);
 
-$existingInstances = $api->checkExistingInstances($config, $instances, $shape, $maxRunningInstancesOfThatShape);
-if ($existingInstances) {
-    echo "$existingInstances\n";
-    return;
-}
+// $existingInstances = $api->checkExistingInstances($config, $instances, $shape, $maxRunningInstancesOfThatShape);
+// if ($existingInstances) {
+//     echo "$existingInstances\n";
+//     return;
+// }
 
 if (!empty($config->availabilityDomains)) {
     if (is_array($config->availabilityDomains)) {

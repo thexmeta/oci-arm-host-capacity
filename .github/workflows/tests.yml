@@ -52,7 +52,7 @@ jobs:
             ${{ runner.os }}-php-${{ matrix.php-versions }}-composer-
 
       - name: Install dependencies
-        run: composer install --prefer-dist --no-progress --no-interaction --optimize-autoloader
+        run: composer install --no-dev --prefer-dist --no-progress --no-interaction --optimize-autoloader
 
       - name: Check Required Secrets
         # Fail fast if secrets are missing before running the script

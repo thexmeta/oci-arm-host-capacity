@@ -115,10 +115,18 @@ foreach ($availabilityDomains as $availabilityDomainEntity) {
     }
 
     // success
-    $message = json_encode($instanceDetails, JSON_PRETTY_PRINT);
-    echo "$message\n";
+    function escapeTelegramMarkdown(string $text): string {
+        $chars = ['_', '*', '[', ']', '(', ')', '~', '`', '>', '#', '+', '-', '=', '|', '{', '}', '.', '!'];
+        foreach ($chars as $char) {
+            $text = str_replace($char, '\\' . $char, $text);
+        }
+        return $text;
+    }
+
     if ($notifier->isSupported()) {
-        $notifier->notify($message);
+        $rawMessage = json_encode($instanceDetails, JSON_PRETTY_PRINT);
+        $escapedMessage = escapeTelegramMarkdown($rawMessage);
+        $notifier->notify($escapedMessage);
     }
 
     return;

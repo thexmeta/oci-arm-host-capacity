@@ -2,30 +2,43 @@ name: Tests
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
   pull_request:
-    branches:
-      - main
-
+    branches: [main]
+  workflow_dispatch:
   schedule:
-    - cron: '*/5 * * * *'
+    - cron: "0,11,22,33,44,55 * * * *"
+    - cron: "5,16,27,38,49 * * * *"
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
 
 jobs:
   tests:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     strategy:
+      fail-fast: false
       matrix:
-        php-versions: ['7.4']
+        .php-versions: ["7.4"]
+
     name: integration-tests (PHP ${{ matrix.php-versions }})
     steps:
-      - uses: actions/checkout@v1
+      - name: Checkout
+        uses: actions/checkout@v1
+
       - name: Install PHP
         uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php-versions }}
+          coverage: none
+          tools: composer:v2
+
       - name: Validate composer.json and composer.lock
-        run: composer validate
+        run: composer validate --strict
 
       - name: Get Composer Cache Directory
         id: composer-cache
@@ -33,17 +46,50 @@ jobs:
           echo "::set-output name=dir::$(composer config cache-files-dir)"
       - uses: actions/cache@v3
         with:
-          path: ${{ steps.composer-cache.outputs.dir }}
-          key: ${{ runner.os }}-${{ matrix.php-version }}-composer-${{ matrix.dependencies }}-${{ hashFiles('**/composer.lock') }}
+          path: vendor
+          key: ${{ runner.os }}-php-${{ matrix.php-versions }}-composer-${{ hashFiles('**/composer.lock') }}
           restore-keys: |
-            ${{ runner.os }}-${{ matrix.php-version }}-composer-${{ matrix.dependencies }}-
+            ${{ runner.os }}-php-${{ matrix.php-versions }}-composer-
 
       - name: Install dependencies
+        run: composer install --prefer-dist --no-progress --no-interaction --optimize-autoloader
+
+      - name: Check Required Secrets
+        # Fail fast if secrets are missing before running the script
         run: |
-          composer update --prefer-dist --no-progress
+          echo "Validating required secrets..."
+          ERRORS=0
+
+          # OCI Configuration
+          [ -z "${{ secrets.OCI_REGION }}" ] && echo "Missing OCI_REGION" && ERRORS=1
+          [ -z "${{ secrets.OCI_USER_ID }}" ] && echo "Missing OCI_USER_ID" && ERRORS=1
+          [ -z "${{ secrets.OCI_TENANCY_ID }}" ] && echo "Missing OCI_TENANCY_ID" && ERRORS=1
+          [ -z "${{ secrets.OCI_KEY_FINGERPRINT }}" ] && echo "Missing OCI_KEY_FINGERPRINT" && ERRORS=1
+          [ -z "${{ secrets.OCI_PRIVATE_KEY_FILENAME }}" ] && echo "Missing OCI_PRIVATE_KEY_FILENAME" && ERRORS=1
+          [ -z "${{ secrets.OCI_AVAILABILITY_DOMAIN }}" ] && echo "Missing OCI_AVAILABILITY_DOMAIN" && ERRORS=1
+          [ -z "${{ secrets.OCI_SUBNET_ID }}" ] && echo "Missing OCI_SUBNET_ID" && ERRORS=1
+          [ -z "${{ secrets.OCI_IMAGE_ID }}" ] && echo "Missing OCI_IMAGE_ID" && ERRORS=1
+          [ -z "${{ secrets.OCI_OCPUS }}" ] && echo "Missing OCI_OCPUS" && ERRORS=1
+          [ -z "${{ secrets.OCI_MEMORY_IN_GBS }}" ] && echo "Missing OCI_MEMORY_IN_GBS" && ERRORS=1
+          [ -z "${{ secrets.OCI_SHAPE }}" ] && echo "Missing OCI_SHAPE" && ERRORS=1
+          [ -z "${{ secrets.OCI_MAX_INSTANCES }}" ] && echo "Missing OCI_MAX_INSTANCES" && ERRORS=1
+          [ -z "${{ secrets.OCI_SSH_PUBLIC_KEY }}" ] && echo "Missing OCI_SSH_PUBLIC_KEY" && ERRORS=1
+
+          # Telegram Configuration
+          [ -z "${{ secrets.TELEGRAM_USER_ID }}" ] && echo "Missing TELEGRAM_USER_ID" && ERRORS=1
+          [ -z "${{ secrets.TELEGRAM_BOT_API_KEY }}" ] && echo "Missing TELEGRAM_BOT_API_KEY" && ERRORS=1
+
+          if [ $ERRORS -eq 1 ]; then
+            echo ""
+            echo "Failed: One or more required secrets are missing."
+            echo "Configure all secrets in Repository Settings > Secrets and variables > Actions"
+            exit 1
+          fi
+
+          echo "All 15 secrets validated successfully"
+
       - name: Run script
-        run: |
-          php index.php
+        run: php index.php
         env:
           OCI_REGION: ${{ secrets.OCI_REGION }}
           OCI_USER_ID: ${{ secrets.OCI_USER_ID }}
@@ -60,7 +106,3 @@ jobs:
           OCI_SSH_PUBLIC_KEY: ${{ secrets.OCI_SSH_PUBLIC_KEY }}
           TELEGRAM_USER_ID: ${{ secrets.TELEGRAM_USER_ID }}
           TELEGRAM_BOT_API_KEY: ${{ secrets.TELEGRAM_BOT_API_KEY }}
-          AD_ALWAYS_FREE: ${{ secrets.AD_ALWAYS_FREE }}
-          TEST_IMAGE_ID: ${{ secrets.TEST_IMAGE_ID }}
-          TEST_SUBNET_ID: ${{ secrets.TEST_SUBNET_ID }}
-

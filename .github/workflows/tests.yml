@@ -84,7 +84,6 @@ jobs:
       #       echo "Configure all secrets in Repository Settings > Secrets and variables > Actions"
       #       exit 1
       #     fi
-
       #     echo "All 15 secrets validated successfully"
 
       - name: Run script
